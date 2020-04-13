@@ -11,7 +11,7 @@ import (
 )
 
 // definition of encoder and decoder
-func decodeNewChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+func DecodeNewChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request endpoint.NewChallengeRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func decodeNewChallengeRequest(ctx context.Context, r *http.Request) (interface{
 	return request, nil
 }
 
-func decodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+func DecodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request endpoint.VerifyChallengeRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -27,7 +27,8 @@ func decodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interfa
 	return request, nil
 }
 
-func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
 }
 
@@ -40,20 +41,18 @@ func NewHTTPServer(ctx context.Context, endpoints endpoint.Endpoints) *gin.Engin
 		chap := auth.Group("/chap")
 		{
 			v1 := chap.Group("/v1")
-			v1.POST("/new-challenge", func(c *gin.Context) {
-				httptransport.NewServer(
-					endpoints.NewChallengeEndpoint,
-					decodeNewChallengeRequest,
-					encodeResponse,
-				)
-			})
-			v1.POST("/verify-challenge", func(c *gin.Context) {
-				httptransport.NewServer(
-					endpoints.VerifyChallengeEndpoint,
-					decodeVerifyChallengeRequest,
-					encodeResponse,
-				)
-			})
+			// needs to wrap http.Handler
+			v1.POST("/new-challenge", gin.WrapH(httptransport.NewServer(
+				endpoints.NewChallengeEndpoint,
+				DecodeNewChallengeRequest,
+				EncodeResponse,
+			)))
+
+			v1.POST("/verify-challenge", gin.WrapH(httptransport.NewServer(
+				endpoints.VerifyChallengeEndpoint,
+				DecodeVerifyChallengeRequest,
+				EncodeResponse,
+			)))
 		}
 	}
 	return router

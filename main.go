@@ -2,16 +2,21 @@ package main
 
 import (
 	"auth-microservice/pkg/endpoint"
-	"auth-microservice/pkg/http"
 	"auth-microservice/pkg/service"
 	"context"
 	"fmt"
-	"os"
 	"os/signal"
 	"syscall"
+
+	// "log"
+	"auth-microservice/pkg/http"
+	"os"
+
+	"github.com/go-kit/kit/log"
 )
 
 func main() {
+	logger := log.NewLogfmtLogger(os.Stderr)
 	ctx := context.Background()
 	authSvc := service.NewAuthService()
 
@@ -31,4 +36,5 @@ func main() {
 	go func() {
 		errChan <- http.NewHTTPServer(ctx, eps).Run(":8080")
 	}()
+	logger.Log("err: ", <-errChan)
 }
