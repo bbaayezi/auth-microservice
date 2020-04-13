@@ -8,22 +8,22 @@ import (
 )
 
 // define request and responses
-type newChallengeRequest struct {
+type NewChallengeRequest struct {
 	Key string `json:"key"`
 }
 
-type newChallengeResponse struct {
+type NewChallengeResponse struct {
 	Challenge string `json:"challenge"`
 	Err       string `json:"error,omitempty"`
 }
 
-type verifyChallengeRequest struct {
+type VerifyChallengeRequest struct {
 	Key    string `json:"key"`
 	Answer string `json:"answer"`
 	Field  string `json:"field"`
 }
 
-type verifyChallengeResponse struct {
+type VerifyChallengeResponse struct {
 	Correct bool   `json:"correct"`
 	Err     string `json:"error,omitempty"`
 }
@@ -31,22 +31,22 @@ type verifyChallengeResponse struct {
 // functions to create endpoints
 func makeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(newChallengeRequest)
+		req := request.(NewChallengeRequest)
 		v, err := svc.NewChallenge(req.Key)
 		if err != nil {
-			return newChallengeResponse{"", err.Error()}, nil
+			return NewChallengeResponse{"", err.Error()}, nil
 		}
-		return newChallengeResponse{v, ""}, nil
+		return NewChallengeResponse{v, ""}, nil
 	}
 }
 
 func makeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(verifyChallengeRequest)
+		req := request.(VerifyChallengeRequest)
 		v, err := svc.VerifyChallenge(req.Key, req.Answer, req.Field)
 		if err != nil {
-			return verifyChallengeResponse{false, err.Error()}, nil
+			return VerifyChallengeResponse{false, err.Error()}, nil
 		}
-		return verifyChallengeResponse{v, ""}, nil
+		return VerifyChallengeResponse{v, ""}, nil
 	}
 }
