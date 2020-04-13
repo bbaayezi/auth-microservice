@@ -7,6 +7,11 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
+type Endpoints struct {
+	NewChallengeEndpoint    endpoint.Endpoint
+	VerifyChallengeEndpoint endpoint.Endpoint
+}
+
 // define request and responses
 type NewChallengeRequest struct {
 	Key string `json:"key"`
@@ -29,7 +34,7 @@ type VerifyChallengeResponse struct {
 }
 
 // functions to create endpoints
-func makeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
+func MakeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(NewChallengeRequest)
 		v, err := svc.NewChallenge(req.Key)
@@ -40,7 +45,7 @@ func makeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	}
 }
 
-func makeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
+func MakeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(VerifyChallengeRequest)
 		v, err := svc.VerifyChallenge(req.Key, req.Answer, req.Field)
