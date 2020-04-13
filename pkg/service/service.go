@@ -76,6 +76,10 @@ func (authService) VerifyChallenge(key string, answer string, field string) (cor
 	ans := fmt.Sprintf("%x", hash.Sum(nil))
 	// compare the answer
 	correct = ans == answer
+	if correct {
+		// delete challenge
+		_, err = redisClient.Del(key).Result()
+	}
 	return
 }
 
@@ -86,5 +90,42 @@ func (authService) Salting(str string) (salt string, result string) {
 	hash := md5.New()
 	io.WriteString(hash, str+salt)
 	result = fmt.Sprintf("%x", hash.Sum(nil))
+	return
+}
+
+func (authService) SendToken(ct ContactService) error {
+	// get redis client to store token
+	redisClient, err := db.GetRedisClient()
+	if err != nil {
+		return err
+	}
+	id := ct.GetContactID()
+	token := utils.GenerateNonce(8)
+	key := id + ".token"
+	_, err = redisClient.SetNX(key, token, 5*time.Minute).Result()
+	if err != nil {
+		return err
+	}
+	// send token
+	return ct.SendMessage(fmt.Sprintf("Your verification code is: %s, it will expire in 5 minutes.", token))
+}
+
+func (authService) VerifyToken(token string, ct ContactService) (correct bool, err error) {
+	// get redis client to store token
+	redisClient, err := db.GetRedisClient()
+	if err != nil {
+		return false, err
+	}
+	key := ct.GetContactID() + ".token"
+	t, err := redisClient.Get(key).Result()
+	if err != nil {
+		return false, err
+	}
+	// compare token
+	correct = t == token
+	if correct {
+		// delete token
+		_, err = redisClient.Del(key).Result()
+	}
 	return
 }
