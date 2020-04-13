@@ -130,6 +130,10 @@ func (authService) VerifyToken(token string, ct ContactService) (correct bool, e
 	return
 }
 
+func NewAuthService() AuthService {
+	return authService{}
+}
+
 type emailContact struct {
 	email string
 	ID    string
