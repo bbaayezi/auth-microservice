@@ -11,7 +11,7 @@ import (
 )
 
 // definition of encoder and decoder
-func DecodeNewChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+func decodeNewChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request endpoint.NewChallengeRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -19,7 +19,7 @@ func DecodeNewChallengeRequest(ctx context.Context, r *http.Request) (interface{
 	return request, nil
 }
 
-func DecodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+func decodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var request endpoint.VerifyChallengeRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func DecodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interfa
 	return request, nil
 }
 
-func EncodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
+func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
 }
@@ -44,14 +44,14 @@ func NewHTTPServer(ctx context.Context, endpoints endpoint.Endpoints) *gin.Engin
 			// needs to wrap http.Handler
 			v1.POST("/new-challenge", gin.WrapH(httptransport.NewServer(
 				endpoints.NewChallengeEndpoint,
-				DecodeNewChallengeRequest,
-				EncodeResponse,
+				decodeNewChallengeRequest,
+				encodeResponse,
 			)))
 
 			v1.POST("/verify-challenge", gin.WrapH(httptransport.NewServer(
 				endpoints.VerifyChallengeEndpoint,
-				DecodeVerifyChallengeRequest,
-				EncodeResponse,
+				decodeVerifyChallengeRequest,
+				encodeResponse,
 			)))
 		}
 	}
