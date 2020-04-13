@@ -55,3 +55,12 @@ func MakeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 		return VerifyChallengeResponse{v, ""}, nil
 	}
 }
+
+// func New(svc service.AuthService, mws []Middleware) Endpoints {
+// 	eps := Endpoints{
+// 		NewChallengeEndpoint: MakeNewChallengeEndpoint(svc),
+// 		VerifyChallengeEndpoint: MakeVerifyChallengeEndpoint(svc),
+// 	}
+// 	// apply endpoint level middleware
+
+// }

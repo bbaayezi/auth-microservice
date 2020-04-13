@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/go-kit/kit/log"
 )
 
 // AuthService is the combination of serveral specific authentication methods
@@ -130,8 +132,15 @@ func (authService) VerifyToken(token string, ct ContactService) (correct bool, e
 	return
 }
 
-func NewAuthService() AuthService {
-	return authService{}
+func NewAuthService(logger log.Logger) AuthService {
+	var svc AuthService
+	svc = authService{}
+	// apply service level middleware
+	svc = loggingMiddleware{
+		logger,
+		svc,
+	}
+	return svc
 }
 
 type emailContact struct {

@@ -18,7 +18,7 @@ import (
 func main() {
 	logger := log.NewLogfmtLogger(os.Stderr)
 	ctx := context.Background()
-	authSvc := service.NewAuthService()
+	authSvc := service.NewAuthService(logger)
 
 	// error handling
 	errChan := make(chan error)
