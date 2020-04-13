@@ -129,3 +129,16 @@ func (authService) VerifyToken(token string, ct ContactService) (correct bool, e
 	}
 	return
 }
+
+type emailContact struct {
+	email string
+	ID    string
+}
+
+func (ect emailContact) GetContactID() string {
+	return ect.ID
+}
+
+func (ect emailContact) SendMessage(msg string) error {
+	return nil
+}
