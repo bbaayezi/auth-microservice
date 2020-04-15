@@ -27,6 +27,15 @@ func decodeVerifyChallengeRequest(ctx context.Context, r *http.Request) (interfa
 	return request, nil
 }
 
+// PAP service decoder
+func decodeSaltingRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request endpoint.SaltingRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
 func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(response)
@@ -38,8 +47,10 @@ func NewHTTPServer(ctx context.Context, endpoints endpoint.Endpoints) *gin.Engin
 	router.Use(commonMiddleware())
 	auth := router.Group("/auth")
 	{
+		// CHAP service
 		chap := auth.Group("/chap")
 		{
+			// version 1
 			v1 := chap.Group("/v1")
 			// needs to wrap http.Handler
 			v1.POST("/new-challenge", gin.WrapH(httptransport.NewServer(
@@ -51,6 +62,16 @@ func NewHTTPServer(ctx context.Context, endpoints endpoint.Endpoints) *gin.Engin
 			v1.POST("/verify-challenge", gin.WrapH(httptransport.NewServer(
 				endpoints.VerifyChallengeEndpoint,
 				decodeVerifyChallengeRequest,
+				encodeResponse,
+			)))
+		}
+		// PAP service
+		pap := auth.Group("/pap")
+		{
+			v1 := pap.Group("/v1")
+			v1.POST("/salting", gin.WrapH(httptransport.NewServer(
+				endpoints.SaltingEndpoint,
+				decodeSaltingRequest,
 				encodeResponse,
 			)))
 		}

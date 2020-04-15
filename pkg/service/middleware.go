@@ -65,17 +65,17 @@ func (mw loggingMiddleware) SendToken(ct ContactService) (err error) {
 	err = mw.next.SendToken(ct)
 	return
 }
-func (mw loggingMiddleware) VerifyToken(token string, ct ContactService) (correct bool, err error) {
+func (mw loggingMiddleware) VerifyToken(token string, id string) (correct bool, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "verifyToken",
-			"contact_id", ct.GetContactID(),
+			"contact_id", id,
 			"client_token", token,
 			"correct", correct,
 			"error", err,
 			"took", time.Since(begin),
 		)
 	}(time.Now())
-	correct, err = mw.next.VerifyToken(token, ct)
+	correct, err = mw.next.VerifyToken(token, id)
 	return
 }

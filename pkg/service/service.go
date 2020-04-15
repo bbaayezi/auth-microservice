@@ -31,7 +31,7 @@ type PAPService interface {
 
 type TokenBaseService interface {
 	SendToken(ct ContactService) error
-	VerifyToken(token string, ct ContactService) (correct bool, err error)
+	VerifyToken(token string, id string) (correct bool, err error)
 }
 
 type ContactService interface {
@@ -112,13 +112,13 @@ func (authService) SendToken(ct ContactService) error {
 	return ct.SendMessage(fmt.Sprintf("Your verification code is: %s, it will expire in 5 minutes.", token))
 }
 
-func (authService) VerifyToken(token string, ct ContactService) (correct bool, err error) {
+func (authService) VerifyToken(token string, id string) (correct bool, err error) {
 	// get redis client to store token
 	redisClient, err := db.GetRedisClient()
 	if err != nil {
 		return false, err
 	}
-	key := ct.GetContactID() + ".token"
+	key := id + ".token"
 	t, err := redisClient.Get(key).Result()
 	if err != nil {
 		return false, err

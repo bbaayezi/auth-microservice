@@ -10,6 +10,7 @@ import (
 type Endpoints struct {
 	NewChallengeEndpoint    endpoint.Endpoint
 	VerifyChallengeEndpoint endpoint.Endpoint
+	SaltingEndpoint         endpoint.Endpoint
 }
 
 // define request and responses
@@ -33,8 +34,40 @@ type VerifyChallengeResponse struct {
 	Err     string `json:"error,omitempty"`
 }
 
+// PAP service request/response
+type SaltingRequest struct {
+	Str string `json:"string"`
+}
+
+type SaltingResponse struct {
+	Salt   string `json:"salt"`
+	Result string `json:"result"`
+}
+
+// Token based service
+type SendTokenRequest struct {
+	ContactType string `json:"contactType"`
+	Message     string `json:"message"`
+}
+
+type SendTokenResponse struct {
+	ID      string `json:"id"`
+	Success bool   `json:"success"`
+	Err     string `json:"error,omitempty"`
+}
+
+type VerifyTokenRequest struct {
+	ID    string `json:"id"`
+	Token string `json:"token"`
+}
+
+type VerifyTokenResponse struct {
+	Correct bool   `json:"string"`
+	Err     string `json:"error,omitempty"`
+}
+
 // functions to create endpoints
-func MakeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
+func makeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(NewChallengeRequest)
 		v, err := svc.NewChallenge(req.Key)
@@ -45,7 +78,7 @@ func MakeNewChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	}
 }
 
-func MakeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
+func makeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(VerifyChallengeRequest)
 		v, err := svc.VerifyChallenge(req.Key, req.Answer, req.Field)
@@ -56,11 +89,21 @@ func MakeVerifyChallengeEndpoint(svc service.AuthService) endpoint.Endpoint {
 	}
 }
 
-// func New(svc service.AuthService, mws []Middleware) Endpoints {
-// 	eps := Endpoints{
-// 		NewChallengeEndpoint: MakeNewChallengeEndpoint(svc),
-// 		VerifyChallengeEndpoint: MakeVerifyChallengeEndpoint(svc),
-// 	}
-// 	// apply endpoint level middleware
+// PAP service endpoint
+func makeSaltingEndpoint(svc service.AuthService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(SaltingRequest)
+		salt, result := svc.Salting(req.Str)
+		return SaltingResponse{salt, result}, nil
+	}
+}
 
-// }
+func New(svc service.AuthService) Endpoints {
+	eps := Endpoints{
+		NewChallengeEndpoint:    makeNewChallengeEndpoint(svc),
+		VerifyChallengeEndpoint: makeVerifyChallengeEndpoint(svc),
+		SaltingEndpoint:         makeSaltingEndpoint(svc),
+	}
+	// apply endpoint level middleware
+	return eps
+}

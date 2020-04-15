@@ -28,10 +28,7 @@ func main() {
 		errChan <- fmt.Errorf("%s", <-c)
 	}()
 	// endpoints
-	eps := endpoint.Endpoints{
-		NewChallengeEndpoint:    endpoint.MakeNewChallengeEndpoint(authSvc),
-		VerifyChallengeEndpoint: endpoint.MakeVerifyChallengeEndpoint(authSvc),
-	}
+	eps := endpoint.New(authSvc)
 
 	go func() {
 		errChan <- http.NewHTTPServer(ctx, eps).Run(":8080")
