@@ -13,4 +13,6 @@ FROM scratch
 
 COPY --from=builder /go/bin/auth /go/bin/auth
 
+EXPOSE 8080
+
 ENTRYPOINT [ "/go/bin/auth" ]
