@@ -2,6 +2,7 @@ package service
 
 import (
 	"auth-microservice/pkg/db"
+	"auth-microservice/pkg/mailing"
 	"auth-microservice/pkg/utils"
 	"crypto/md5"
 	"fmt"
@@ -143,15 +144,16 @@ func NewAuthService(logger log.Logger) AuthService {
 	return svc
 }
 
-type emailContact struct {
-	email string
+type EmailContact struct {
+	Email string
 	ID    string
 }
 
-func (ect emailContact) GetContactID() string {
+func (ect EmailContact) GetContactID() string {
 	return ect.ID
 }
 
-func (ect emailContact) SendMessage(msg string) error {
+func (ect EmailContact) SendMessage(msg string) error {
+	go mailing.SendMail([]string{ect.Email}, msg)
 	return nil
 }

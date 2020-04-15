@@ -5,12 +5,15 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Endpoints struct {
 	NewChallengeEndpoint    endpoint.Endpoint
 	VerifyChallengeEndpoint endpoint.Endpoint
 	SaltingEndpoint         endpoint.Endpoint
+	SendTokenEndpoint       endpoint.Endpoint
+	VerifyTokenEndpoint     endpoint.Endpoint
 }
 
 // define request and responses
@@ -46,8 +49,8 @@ type SaltingResponse struct {
 
 // Token based service
 type SendTokenRequest struct {
-	ContactType string `json:"contactType"`
-	Message     string `json:"message"`
+	ContactMethod string `json:"contactMethod"`
+	Contact       string `json:"contact"`
 }
 
 type SendTokenResponse struct {
@@ -62,7 +65,7 @@ type VerifyTokenRequest struct {
 }
 
 type VerifyTokenResponse struct {
-	Correct bool   `json:"string"`
+	Correct bool   `json:"correct"`
 	Err     string `json:"error,omitempty"`
 }
 
@@ -98,11 +101,56 @@ func makeSaltingEndpoint(svc service.AuthService) endpoint.Endpoint {
 	}
 }
 
+// Token based service endpoints
+func makeSendTokenEndpoint(svc service.AuthService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(SendTokenRequest)
+		var id string
+		// check contect method
+		switch req.ContactMethod {
+		case "email":
+			// create a new email contact
+			// generate a uuid
+			id = uuid.Must(uuid.NewV4(), err).String()
+			if err != nil {
+				return SendTokenResponse{"", false, err.Error()}, nil
+			}
+			contact := service.EmailContact{
+				// generate a uuid
+				ID:    id,
+				Email: req.Contact,
+			}
+			err := svc.SendToken(contact)
+			if err != nil {
+				return SendTokenResponse{"", false, err.Error()}, nil
+			}
+			break
+		// other contact method goes here...
+		default:
+			return SendTokenResponse{"", false, "Unsupported contact method"}, nil
+		}
+		return SendTokenResponse{id, true, ""}, nil
+	}
+}
+
+func makeVerifyTokenEndpoint(svc service.AuthService) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(VerifyTokenRequest)
+		correct, err := svc.VerifyToken(req.Token, req.ID)
+		if err != nil {
+			return VerifyTokenResponse{false, err.Error()}, nil
+		}
+		return VerifyTokenResponse{correct, ""}, nil
+	}
+}
+
 func New(svc service.AuthService) Endpoints {
 	eps := Endpoints{
 		NewChallengeEndpoint:    makeNewChallengeEndpoint(svc),
 		VerifyChallengeEndpoint: makeVerifyChallengeEndpoint(svc),
 		SaltingEndpoint:         makeSaltingEndpoint(svc),
+		SendTokenEndpoint:       makeSendTokenEndpoint(svc),
+		VerifyTokenEndpoint:     makeVerifyTokenEndpoint(svc),
 	}
 	// apply endpoint level middleware
 	return eps

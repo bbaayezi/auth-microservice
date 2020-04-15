@@ -41,6 +41,23 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 	return json.NewEncoder(w).Encode(response)
 }
 
+// Token base service decoder
+func decodeSendTokenRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request endpoint.SendTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
+func decodeVerifyTokenRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var request endpoint.VerifyTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		return nil, err
+	}
+	return request, nil
+}
+
 func NewHTTPServer(ctx context.Context, endpoints endpoint.Endpoints) *gin.Engine {
 	router := gin.Default()
 	// use middlewares
@@ -72,6 +89,21 @@ func NewHTTPServer(ctx context.Context, endpoints endpoint.Endpoints) *gin.Engin
 			v1.POST("/salting", gin.WrapH(httptransport.NewServer(
 				endpoints.SaltingEndpoint,
 				decodeSaltingRequest,
+				encodeResponse,
+			)))
+		}
+		// token base service
+		token := auth.Group("/token")
+		{
+			v1 := token.Group("/v1")
+			v1.POST("send-token", gin.WrapH(httptransport.NewServer(
+				endpoints.SendTokenEndpoint,
+				decodeSendTokenRequest,
+				encodeResponse,
+			)))
+			v1.POST("/verify-token", gin.WrapH(httptransport.NewServer(
+				endpoints.VerifyTokenEndpoint,
+				decodeVerifyTokenRequest,
 				encodeResponse,
 			)))
 		}
